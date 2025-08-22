@@ -47,8 +47,8 @@ export class Bot {
 
     // @ts-expect-error This expression is not callable.
     this.client.on("messageCreate", async (message: Message) => {
-      // FIRST: Only process messages from the specific channel
-      if (message.channelId !== "1046068955120418816") {
+      // FIRST: Only process messages from the specific channels
+      if (message.channelId !== "1404808661070647356" && message.channelId !== "1202302395854364762") {
         return; // Silently ignore messages from other channels
       }
       
