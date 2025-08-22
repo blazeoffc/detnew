@@ -49,8 +49,7 @@ export class Bot {
     // @ts-expect-error This expression is not callable.
     this.client.on("messageCreate", async (message: Message) => {
       // FIRST: Only process messages from the specific channels
-      const env = getEnv();
-      const allowedChannelIds = env.DISCORD_CHANNEL_IDS?.split(',').map(id => id.trim()) || [
+      const allowedChannelIds = this.config.allowedChannelsIds || [
         "1404808661070647356", // Default channel 1
         "1202302395854364762"  // Default channel 2
       ];
