@@ -15,6 +15,7 @@ import { Config } from "./config.js";
 import { isAllowedByConfig } from "./filterMessages.js";
 import { formatSize } from "./format.js";
 import { SenderBot } from "./senderBot.js";
+import { getEnv } from "./env.js";
 
 interface RenderOutput {
   content: string;
@@ -48,7 +49,13 @@ export class Bot {
     // @ts-expect-error This expression is not callable.
     this.client.on("messageCreate", async (message: Message) => {
       // FIRST: Only process messages from the specific channels
-      if (message.channelId !== "1404808661070647356" && message.channelId !== "1202302395854364762") {
+      const env = getEnv();
+      const allowedChannelIds = env.DISCORD_CHANNEL_IDS?.split(',').map(id => id.trim()) || [
+        "1404808661070647356", // Default channel 1
+        "1202302395854364762"  // Default channel 2
+      ];
+      
+      if (!allowedChannelIds.includes(message.channelId)) {
         return; // Silently ignore messages from other channels
       }
       
