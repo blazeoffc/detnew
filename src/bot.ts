@@ -72,7 +72,7 @@ export class Bot {
       }
       
       // TEMPORARY: Only allow your specific user ID
-      if (message.author?.id !== "346137576588967937") {
+      if (message.author?.id !== "404290235292319776") {
         console.log(`[DEBUG] Skipping message from user ${message.author?.id} (not you)`);
         return;
       }
