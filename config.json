@@ -1,0 +1,17 @@
+{
+    "outputChannels": [],
+    "allowedGuildsIds": [],
+    "mutedGuildsIds": [],
+    "allowedChannelsIds": ["1404808661070647356", "1202302395854364762"],
+    "mutedChannelsIds": [],
+    "allowedUsersIds": ["404290235292319776", "420661026955067413"],
+    "mutedUsersIds": [],
+    "channelConfigs": {},
+    "disableLinkPreview": false,
+    "imagesAsMedia": true,
+    "showDate": false,
+    "showChat": false,
+    "stackMessages": false,
+    "showMessageUpdates": false,
+    "showMessageDeletions": false
+  }
