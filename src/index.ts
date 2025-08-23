@@ -132,3 +132,23 @@ server.listen(port, () => {
   console.log(`[Main] 🌐 HTTP server listening on port ${port}`);
   console.log(`[Main] 🔍 Health check available at http://localhost:${port}/health`);
 });
+
+// Self-ping to keep the service alive
+const selfPingUrl = process.env.SELF_PING_URL;
+if (selfPingUrl) {
+  console.log(`[Main] 🔄 Self-ping enabled: ${selfPingUrl}`);
+  setInterval(async () => {
+    try {
+      const response = await fetch(selfPingUrl);
+      if (response.ok) {
+        console.log(`[Main] ✅ Self-ping successful: ${response.status}`);
+      } else {
+        console.log(`[Main] ⚠️ Self-ping warning: ${response.status}`);
+      }
+    } catch (error) {
+      console.log(`[Main] ❌ Self-ping failed: ${error}`);
+    }
+  }, 4 * 60 * 1000); // Every 4 minutes
+} else {
+  console.log(`[Main] ℹ️ Self-ping disabled (set SELF_PING_URL to enable)`);
+}
