@@ -32,6 +32,9 @@ export class Bot {
   senderBot: SenderBot;
   config: Config;
   client: Client;
+  private lastLoggedChannels: Set<string> = new Set();
+  private channelSkipCounts: Map<string, number> = new Map();
+  private userSkipCounts: Map<string, number> = new Map();
 
   constructor(client: Client, config: Config, senderBot: SenderBot) {
     this.config = config;
@@ -63,7 +66,8 @@ export class Bot {
       console.log(`[DEBUG] Message channel ID: ${message.channelId}`);
       
       if (!allowedChannelIds.includes(message.channelId)) {
-        console.log(`[DEBUG] Channel ${message.channelId} not in allowed list, skipping`);
+        // Only log channel skips occasionally to reduce noise
+        this.logChannelSkip(message.channelId);
         return; // Silently ignore messages from other channels
       }
       
@@ -88,7 +92,8 @@ export class Bot {
       console.log(`[DEBUG] Message author ID: ${message.author?.id}`);
       
       if (!allowedUserIds.includes(message.author?.id)) {
-        console.log(`[DEBUG] Skipping message from user ${message.author?.id} (not allowed)`);
+        // Only log user skips occasionally to reduce noise
+        this.logUserSkip(message.author?.id || 'unknown');
         return;
       }
       
@@ -259,5 +264,25 @@ export class Bot {
     }
 
     return text;
+  }
+
+  private logChannelSkip(channelId: string): void {
+    const count = (this.channelSkipCounts.get(channelId) || 0) + 1;
+    this.channelSkipCounts.set(channelId, count);
+    
+    // Only log every 10th skip for the same channel to reduce noise
+    if (count % 10 === 0) {
+      console.log(`[DEBUG] Channel ${channelId} skipped ${count} times (not in allowed list)`);
+    }
+  }
+
+  private logUserSkip(userId: string): void {
+    const count = (this.userSkipCounts.get(userId) || 0) + 1;
+    this.userSkipCounts.set(userId, count);
+    
+    // Only log every 10th skip for the same user to reduce noise
+    if (count % 10 === 0) {
+      console.log(`[DEBUG] User ${userId} skipped ${count} times (not allowed)`);
+    }
   }
 }
