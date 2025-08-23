@@ -49,10 +49,12 @@ export class Bot {
     // @ts-expect-error This expression is not callable.
     this.client.on("messageCreate", async (message: Message) => {
       // FIRST: Only process messages from the specific channels
-      const allowedChannelIds = this.config.allowedChannelsIds || [
-        "1404808661070647356", // Default channel 1
-        "1202302395854364762"  // Default channel 2
-      ];
+      const env = getEnv();
+      const allowedChannelIds = env.DISCORD_CHANNEL_IDS?.split(',').map(id => id.trim()) || 
+        this.config.allowedChannelsIds || [
+          "1404808661070647356", // Default channel 1
+          "1202302395854364762"  // Default channel 2
+        ];
       
       if (!allowedChannelIds.includes(message.channelId)) {
         return; // Silently ignore messages from other channels
@@ -71,9 +73,12 @@ export class Bot {
         return;
       }
       
-      // TEMPORARY: Only allow your specific user ID
-      if (message.author?.id !== "404290235292319776") {
-        console.log(`[DEBUG] Skipping message from user ${message.author?.id} (not you)`);
+      // Check if user is allowed
+      const allowedUserIds = env.DISCORD_USER_IDS?.split(',').map(id => id.trim()) || 
+        this.config.allowedUsersIds || ["404290235292319776"];
+      
+      if (!allowedUserIds.includes(message.author?.id)) {
+        console.log(`[DEBUG] Skipping message from user ${message.author?.id} (not allowed)`);
         return;
       }
       

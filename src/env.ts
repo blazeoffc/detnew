@@ -17,6 +17,7 @@ export interface Env {
   PROXY_URL?: string;
   GEMINI_API_KEY?: string;
   DISCORD_CHANNEL_IDS?: string;
+  DISCORD_USER_IDS?: string;
 }
 
 export function getEnv(): Env {
