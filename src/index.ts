@@ -111,3 +111,24 @@ if (grammyClient && env.GEMINI_API_KEY && env.TELEGRAM_CHAT_ID) {
 }
 
 bot.client.login(env.DISCORD_TOKEN);
+
+// Start HTTP server for Render health checks
+const port = process.env.PORT || 3000;
+const server = new (await import('http')).default.Server((req, res) => {
+  if (req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      bot: 'Discord to Telegram Forwarding Bot'
+    }));
+  } else {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Discord to Telegram Bot is running!');
+  }
+});
+
+server.listen(port, () => {
+  console.log(`[Main] 🌐 HTTP server listening on port ${port}`);
+  console.log(`[Main] 🔍 Health check available at http://localhost:${port}/health`);
+});
