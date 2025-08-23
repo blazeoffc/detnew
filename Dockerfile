@@ -1,4 +1,4 @@
-FROM node:18-alpine3.21 AS base
+FROM node:20-alpine AS base
 LABEL authors="tapnisu"
 
 WORKDIR /app
