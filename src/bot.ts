@@ -40,8 +40,11 @@ export class Bot {
 
     // @ts-expect-error This expression is not callable.
     this.client.on("ready", (clientArg: Client<true>) => {
+      const env = getEnv();
       console.log(`Logged into Discord as @${clientArg.user?.tag}!`);
       console.log(`[DEBUG] Bot is ready and listening for messages...`);
+      console.log(`[DEBUG] Environment DISCORD_CHANNEL_IDS: "${env.DISCORD_CHANNEL_IDS}"`);
+      console.log(`[DEBUG] Environment DISCORD_USER_IDS: "${env.DISCORD_USER_IDS}"`);
       console.log(`[DEBUG] Config allowedChannelsIds: ${JSON.stringify(this.config.allowedChannelsIds)}`);
       console.log(`[DEBUG] Config allowedUsersIds: ${JSON.stringify(this.config.allowedUsersIds)}`);
     });
@@ -56,7 +59,11 @@ export class Bot {
           "1202302395854364762"  // Default channel 2
         ];
       
+      console.log(`[DEBUG] Using channel IDs: ${JSON.stringify(allowedChannelIds)}`);
+      console.log(`[DEBUG] Message channel ID: ${message.channelId}`);
+      
       if (!allowedChannelIds.includes(message.channelId)) {
+        console.log(`[DEBUG] Channel ${message.channelId} not in allowed list, skipping`);
         return; // Silently ignore messages from other channels
       }
       
@@ -75,7 +82,10 @@ export class Bot {
       
       // Check if user is allowed
       const allowedUserIds = env.DISCORD_USER_IDS?.split(',').map(id => id.trim()) || 
-        this.config.allowedUsersIds || ["404290235292319776"];
+        this.config.allowedUsersIds || ["404290235776"];
+      
+      console.log(`[DEBUG] Using user IDs: ${JSON.stringify(allowedUserIds)}`);
+      console.log(`[DEBUG] Message author ID: ${message.author?.id}`);
       
       if (!allowedUserIds.includes(message.author?.id)) {
         console.log(`[DEBUG] Skipping message from user ${message.author?.id} (not allowed)`);
