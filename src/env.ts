@@ -15,7 +15,6 @@ export interface Env {
   OUTPUT_BACKEND?: BotType;
   DISCORD_WEBHOOK_URL?: string;
   PROXY_URL?: string;
-  GEMINI_API_KEY?: string;
   DISCORD_CHANNEL_IDS?: string;
   DISCORD_USER_IDS?: string;
 }

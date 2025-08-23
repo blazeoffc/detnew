@@ -8,7 +8,6 @@ import { Bot, Client } from "./bot.js";
 import { getConfig } from "./config.js";
 import { BotBackend, getEnv } from "./env.js";
 import { BotType, SenderBot } from "./senderBot.js";
-import { TradingBot } from "./tradingBot.js";
 import { ProxyAgent } from "proxy-agent";
 
 const env = getEnv();
@@ -85,30 +84,6 @@ const client: Client = (() => {
 })();
 
 const bot = new Bot(client, config, senderBot);
-
-// Initialize AI Trading Bot
-let tradingBot: TradingBot | null = null;
-if (grammyClient && env.GEMINI_API_KEY && env.TELEGRAM_CHAT_ID) {
-  console.log('[Main] Initializing AI Trading Bot...');
-  tradingBot = new TradingBot(
-    grammyClient,
-    env.GEMINI_API_KEY,
-    env.TELEGRAM_CHAT_ID
-  );
-  
-  // Start the Telegram bot to listen for incoming messages
-  console.log('[Main] Starting Telegram bot listener...');
-  grammyClient.start().then(() => {
-    console.log('[Main] ✅ Telegram bot is now listening for messages');
-  }).catch((error) => {
-    console.error('[Main] ❌ Failed to start Telegram bot:', error);
-  });
-  
-  console.log('[Main] ✅ AI Trading Bot initialized');
-} else {
-  console.log('[Main] ⚠️ AI Trading Bot not initialized - missing required environment variables');
-  console.log('[Main] Required: GEMINI_API_KEY, TELEGRAM_CHAT_ID');
-}
 
 bot.client.login(env.DISCORD_TOKEN);
 
