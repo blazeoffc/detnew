@@ -146,7 +146,7 @@ export class Bot {
           }
         }
       );
-
+      
     if (config.showMessageDeletions)
       // @ts-expect-error This expression is not callable.
       this.client.on("messageDelete", async (message: Message) => {
@@ -296,10 +296,6 @@ export class Bot {
 
   private buildTeluguBreakdown(text: string): string | null {
     if (!text) return null;
-
-    const hasQuoteLines = text.split(/\r?\n/).some((l) => l.trim().startsWith(">"));
-    const looksLikeRecap = /quick\s*recap/i.test(text) || hasQuoteLines;
-    if (!looksLikeRecap) return null;
 
     const lines = text
       .split(/\r?\n/)
