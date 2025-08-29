@@ -15,6 +15,8 @@ export interface Env {
   OUTPUT_BACKEND?: BotType;
   DISCORD_WEBHOOK_URL?: string;
   PROXY_URL?: string;
+  GEMINI_API_KEY?: string;
+  AI_SUMMARY_ENABLED?: string; // "true" to enable AI Telugu summaries
   DISCORD_CHANNEL_IDS?: string;
   DISCORD_USER_IDS?: string;
 }

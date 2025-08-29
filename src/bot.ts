@@ -16,6 +16,7 @@ import { isAllowedByConfig } from "./filterMessages.js";
 import { formatSize } from "./format.js";
 import { SenderBot } from "./senderBot.js";
 import { getEnv } from "./env.js";
+import { AiSummarizer } from "./aiSummarizer.js";
 
 interface RenderOutput {
   content: string;
@@ -35,6 +36,7 @@ export class Bot {
   private lastLoggedChannels: Set<string> = new Set();
   private channelSkipCounts: Map<string, number> = new Map();
   private userSkipCounts: Map<string, number> = new Map();
+  private aiSummarizer: AiSummarizer | null = null;
 
   constructor(client: Client, config: Config, senderBot: SenderBot) {
     this.config = config;
@@ -50,6 +52,13 @@ export class Bot {
       console.log(`[DEBUG] Environment DISCORD_USER_IDS: "${env.DISCORD_USER_IDS}"`);
       console.log(`[DEBUG] Config allowedChannelsIds: ${JSON.stringify(this.config.allowedChannelsIds)}`);
       console.log(`[DEBUG] Config allowedUsersIds: ${JSON.stringify(this.config.allowedUsersIds)}`);
+      // Initialize AI summarizer if enabled and key exists
+      if (env.AI_SUMMARY_ENABLED === "true" && env.GEMINI_API_KEY) {
+        this.aiSummarizer = new AiSummarizer(env.GEMINI_API_KEY);
+        console.log(`[DEBUG] AI Telugu summarizer enabled`);
+      } else {
+        console.log(`[DEBUG] AI Telugu summarizer disabled`);
+      }
     });
 
     // @ts-expect-error This expression is not callable.
@@ -165,6 +174,7 @@ export class Bot {
     tag?: string
   ) {
     let render = "";
+    const originalText = message.content;
     const allAttachments: string[] = [];
     const images: InputMediaPhoto[] = [];
 
@@ -219,6 +229,24 @@ export class Bot {
 
     render += allAttachments.join("");
 
+    // Attempt to build a Telugu breakdown if the message looks like a recap/list
+    const breakdown = this.buildTeluguBreakdown(originalText);
+    if (breakdown) {
+      render += `\n\n📝 వివరణ (Telugu)\n${breakdown}`;
+    }
+
+    // If AI summarizer is enabled, append AI Telugu summary below rule-based breakdown
+    if (this.aiSummarizer) {
+      try {
+        const aiSummary = await this.aiSummarizer.summarizeToTelugu(originalText);
+        if (aiSummary) {
+          render += `\n\n🤖 AI సారాంశం (Telugu)\n${aiSummary}`;
+        }
+      } catch {
+        // ignore AI errors silently
+      }
+    }
+
     console.log(render);
 
     return { content: render, images } as RenderOutput;
@@ -264,6 +292,72 @@ export class Bot {
     }
 
     return text;
+  }
+
+  private buildTeluguBreakdown(text: string): string | null {
+    if (!text) return null;
+
+    const hasQuoteLines = text.split(/\r?\n/).some((l) => l.trim().startsWith(">"));
+    const looksLikeRecap = /quick\s*recap/i.test(text) || hasQuoteLines;
+    if (!looksLikeRecap) return null;
+
+    const lines = text
+      .split(/\r?\n/)
+      .map((l) => l.replace(/^\s*>\s?/, "").trim())
+      .filter((l) => l.length > 0 && !/^quick\s*recap/i.test(l));
+
+    if (lines.length === 0) return null;
+
+    const explainLine = (line: string): string => {
+      const lower = line.toLowerCase();
+
+      // Try to extract a symbol as the first token (e.g., BTC, ENA, SOL)
+      const firstToken = (line.match(/^([A-Za-z0-9_.-]+)/)?.[1] || "").toUpperCase();
+      const symbol = /[A-Z]/.test(firstToken) ? firstToken : "";
+
+      const parts: string[] = [];
+      if (symbol) parts.push(`• ${symbol}:`);
+
+      // Status mappings
+      const phrases: Array<{ test: RegExp; text: string }> = [
+        { test: /(short|sell)\s+invalid|invalid\s+short/, text: "షార్ట్ సెటప్ చెల్లదు" },
+        { test: /(long|buy)\s+invalid|invalid\s+long/, text: "లాంగ్ సెటప్ చెల్లదు" },
+        { test: /front\s*run/, text: "ఫ్రంట్-రన్ (ముందస్తు ట్రేడింగ్) కారణంగా" },
+        { test: /stopped\s*be|stop(ped)?\s*at\s*be|breakeven|break\s*even/i, text: "బ్రేక్-ఈవెన్ వద్ద స్టాప్ అయింది" },
+        { test: /trade\s*active/i, text: "ట్రేడ్ ప్రస్తుతం యాక్టివ్‌లో ఉంది" },
+        { test: /limit\s*active/i, text: "లిమిట్ ఆర్డర్ యాక్టివ్‌లో ఉంది" },
+        { test: /second\s*entries?\s*not\s*valid/i, text: "రెండో ఎంట్రీలు ఇప్పటికీ అనుమతించబడలేదు" },
+        { test: /until\s*i\s*say\s*it\s*is/i, text: "నేను చెప్పే వరకు వేచి ఉండాలి" }
+      ];
+
+      const matched: string[] = [];
+      for (const p of phrases) {
+        if (p.test.test(lower)) matched.push(p.text);
+      }
+
+      if (matched.length === 0) {
+        // Fallback generic explanation
+        if (symbol) {
+          return `• ${symbol}: అందించిన లైన్లో స్థితి నవీకరణ ఉంది: "${line}"`;
+        }
+        return `• వివరణ: "${line}"`;
+      }
+
+      // Join with natural Telugu phrasing
+      const composed = matched
+        .map((t, i) => (i === 0 ? t : t.replace(/^/, ", ")))
+        .join("");
+
+      return parts.length > 0 ? `${parts.join(" ")} ${composed}` : `• ${composed}`;
+    };
+
+    const explained = lines.map(explainLine).join("\n");
+    // Add an extra rule-based note if present
+    if (/second\s*entries?\s*not\s*valid/i.test(text)) {
+      return `${explained}\n• గమనిక: రెండో ఎంట్రీలు అధికారిక నిర్ధారణ వచ్చే వరకు చెల్లవు.`;
+    }
+
+    return explained;
   }
 
   private logChannelSkip(channelId: string): void {
